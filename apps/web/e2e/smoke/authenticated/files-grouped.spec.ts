@@ -1,57 +1,64 @@
 /**
- * Grouped files page (issue #217 PR 2). Seeds one batch + one ungrouped file
- * for the regular user so we can assert the batch header, the synthetic
- * "Ungrouped" section, and the "Restore batch" button all render — instead of
- * a smoke-test that only checks the page heading.
+ * Grouped files page (issue #217 PR 2). A spec-local fixture seeds one batch +
+ * one ungrouped file for the regular user (back door, with teardown) so we can
+ * assert the batch header, the synthetic "Ungrouped" section, and the "Restore
+ * batch" button all render — instead of a smoke-test that only checks the page
+ * heading.
  */
-import { test, expect } from '../../fixtures/authenticated';
-import { findUserByEmail, getDb } from '../../helpers/db';
-import { REGULAR_USER } from '../../helpers/auth';
+import { test as base, expect } from '../../fixtures';
+import {
+    insertUploadBatch,
+    insertFile,
+    deleteUserData,
+} from '@nexus/db/test-db';
+
+const test = base.extend<{ groupedFiles: { batchName: string } }>({
+    groupedFiles: async ({ db, seedUserId }, use) => {
+        await deleteUserData(db, seedUserId);
+        const batch = await insertUploadBatch(db, {
+            userId: seedUserId,
+            name: `E2E Test Batch ${Date.now()}`,
+        });
+        // Two files in the batch, both archived (so Restore batch button shows),
+        // summing to 300 bytes for the metadata-line assertion.
+        await insertFile(db, {
+            userId: seedUserId,
+            batchId: batch.id,
+            name: 'batched-a.txt',
+            size: 100,
+            storageTier: 'glacier',
+            status: 'available',
+        });
+        await insertFile(db, {
+            userId: seedUserId,
+            batchId: batch.id,
+            name: 'batched-b.txt',
+            size: 200,
+            storageTier: 'glacier',
+            status: 'available',
+        });
+        // One legacy file with no batch_id → renders under "Ungrouped".
+        await insertFile(db, {
+            userId: seedUserId,
+            name: 'legacy-orphan.txt',
+            size: 50,
+            storageTier: 'standard',
+            status: 'available',
+        });
+
+        await use({ batchName: batch.name });
+
+        await deleteUserData(db, seedUserId);
+    },
+});
 
 test.use({ userRole: 'user' });
 
-const TEST_BATCH_NAME = `E2E Test Batch ${Date.now()}`;
-
-async function seedBatchAndFiles(userId: string) {
-    const sql = getDb();
-    const batchId = crypto.randomUUID();
-    await sql`
-        INSERT INTO upload_batches (id, user_id, name)
-        VALUES (${batchId}, ${userId}, ${TEST_BATCH_NAME})
-    `;
-    // Two files in the batch, one archived (so Restore batch button shows).
-    await sql`
-        INSERT INTO files (id, user_id, batch_id, name, size, s3_key, storage_tier, status)
-        VALUES
-            (gen_random_uuid()::text, ${userId}, ${batchId}, 'batched-a.txt', 100, ${`${userId}/${batchId}/a/batched-a.txt`}, 'glacier', 'available'),
-            (gen_random_uuid()::text, ${userId}, ${batchId}, 'batched-b.txt', 200, ${`${userId}/${batchId}/b/batched-b.txt`}, 'glacier', 'available')
-    `;
-    // One legacy file with no batch_id → renders under "Ungrouped".
-    await sql`
-        INSERT INTO files (id, user_id, batch_id, name, size, s3_key, storage_tier, status)
-        VALUES (gen_random_uuid()::text, ${userId}, NULL, 'legacy-orphan.txt', 50, ${`${userId}/legacy/legacy-orphan.txt`}, 'standard', 'available')
-    `;
-    return { batchId };
-}
-
-async function cleanup(userId: string) {
-    const sql = getDb();
-    await sql`DELETE FROM files WHERE user_id = ${userId}`;
-    await sql`DELETE FROM upload_batches WHERE user_id = ${userId}`;
-}
-
 test.describe('grouped files page', () => {
-    test('renders batch header + Ungrouped + restore button', async ({
-        page,
-        consoleErrors,
-    }) => {
-        const user = await findUserByEmail(REGULAR_USER.email);
-        if (!user) throw new Error('regular user missing');
-
-        await cleanup(user.id);
-        await seedBatchAndFiles(user.id);
-
-        try {
+    test(
+        'renders batch header + Ungrouped + restore button',
+        { tag: ['@page:/dashboard/files', '@uc:files-grouped-render'] },
+        async ({ page, consoleErrors, groupedFiles }) => {
             await page.goto('/dashboard/files');
 
             // Page heading still renders.
@@ -61,7 +68,7 @@ test.describe('grouped files page', () => {
 
             // Batch header renders with the seeded batch name.
             await expect(
-                page.getByRole('heading', { name: TEST_BATCH_NAME })
+                page.getByRole('heading', { name: groupedFiles.batchName })
             ).toBeVisible();
 
             // Metadata line shows "2 files · 300 Bytes · ..."
@@ -83,8 +90,6 @@ test.describe('grouped files page', () => {
             await expect(page.getByText('legacy-orphan.txt')).toBeVisible();
 
             expect(consoleErrors).toEqual([]);
-        } finally {
-            await cleanup(user.id);
         }
-    });
+    );
 });
