@@ -40,3 +40,6 @@ docs/.obsidian/plugins/
 docs/.obsidian/cache
 .vercel
 .env*.local
+
+# Claude Code worktrees (default location for `claude --worktree`)
+.claude/worktrees/

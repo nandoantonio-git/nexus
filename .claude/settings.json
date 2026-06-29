@@ -61,6 +61,22 @@
         ]
     },
     "hooks": {
+        "SessionStart": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/git-identity.sh\"",
+                        "timeout": 30000
+                    },
+                    {
+                        "type": "command",
+                        "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/worktree-setup.sh\"",
+                        "timeout": 600000
+                    }
+                ]
+            }
+        ],
         "PostToolUse": [
             {
                 "matcher": "Edit|Write",

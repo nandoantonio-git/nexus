@@ -1,5 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Honor PORT so each `claude --worktree` checkout (which sets a per-worktree
+// PORT) runs its dev server and e2e on the same port. Falls back to 3000, so
+// CI and the main checkout are unchanged.
+const PORT = process.env.PORT ?? 3000;
+const BASE_URL = `http://localhost:${PORT}`;
+
 const adminChrome = {
     ...devices['Desktop Chrome'],
     storageState: 'e2e/.auth/admin.json',
@@ -17,7 +23,7 @@ export default defineConfig({
     // Full per-test output: `npx playwright test --reporter=list`.
     reporter: [['./e2e/reporters/compact.ts'], ['html', { open: 'never' }]],
     use: {
-        baseURL: 'http://localhost:3000',
+        baseURL: BASE_URL,
         trace: 'on-first-retry',
     },
     projects: [
@@ -90,7 +96,7 @@ export default defineConfig({
     ],
     webServer: {
         command: 'pnpm dev',
-        url: 'http://localhost:3000',
+        url: BASE_URL,
         reuseExistingServer: !process.env.CI,
     },
 });

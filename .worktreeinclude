@@ -1,0 +1,11 @@
+# Untracked local files copied into each `claude --worktree` checkout.
+# .gitignore syntax; ONLY files that are also gitignored get copied, so nothing
+# tracked is duplicated. Without this a fresh worktree has no env/secrets and
+# can't talk to Supabase / S3 / Stripe.
+.env
+.env.local
+.env.*.local
+apps/web/.env.local
+.vercel
+# Playwright auth state — skips the re-login `setup` project in a fresh worktree.
+**/e2e/.auth
