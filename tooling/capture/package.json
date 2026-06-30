@@ -14,7 +14,7 @@
         "drizzle-orm": "^0.45.1"
     },
     "devDependencies": {
-        "@playwright/test": "^1.57.0",
+        "@playwright/test": "^1.61.1",
         "@types/node": "^20",
         "tsx": "^4.21.0",
         "typescript": "^5"
