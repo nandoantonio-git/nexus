@@ -194,17 +194,36 @@ async function createPortalSession(
  * Subscription. Expiry is enforced soft by `quotaService.checkQuota` —
  * the row stays `status: 'trialing'` until a real subscription replaces it.
  */
+/**
+ * Create the Stripe customer backing a new user's trial — or, under the e2e
+ * flag, a synthetic stand-in. The e2e suite runs against a live server
+ * (E2E=1) that signs up with a fresh email every run, so a real call here
+ * would leak a test-mode customer with no cleanup and make the smoke tier
+ * depend on Stripe's API being reachable. A synthetic id keeps signup a pure
+ * local flow; the trial row and settings UI never need a real customer, and
+ * real creation stays covered by unit tests. Mirrors the E2E rate-limit gate
+ * in `lib/auth/server.ts` and the `cus_test_` fixtures in `@nexus/db/test-db`.
+ */
+async function createTrialCustomer(
+    userId: string,
+    email: string,
+    name?: string
+): Promise<{ id: string }> {
+    if (process.env.E2E) return { id: `cus_e2e_${userId}` };
+    return stripeClient.customers.create({
+        email,
+        name: name ?? undefined,
+        metadata: { userId },
+    });
+}
+
 async function provisionTrialSubscription(
     db: DB,
     userId: string,
     email: string,
     name?: string
 ): Promise<void> {
-    const customer = await stripeClient.customers.create({
-        email,
-        name: name ?? undefined,
-        metadata: { userId },
-    });
+    const customer = await createTrialCustomer(userId, email, name);
 
     const trialEnd = addDays(new Date(), TRIAL_DURATION_DAYS);
 
