@@ -16,6 +16,25 @@ cd "$root" || exit 0
 # <common>/worktrees/<name>, so the two paths differ.
 [ "$(git rev-parse --git-dir)" = "$(git rev-parse --git-common-dir)" ] && exit 0
 
+# `claude -w feat/86` can't put a `/` in the worktree dir name, so it sanitizes
+# to `feat+86` and names the branch `worktree-feat+86`. The dir name is fine, but
+# the branch should be the slashed form the user actually typed. Recover it:
+# strip the `worktree-` prefix and turn `+` back into `/`.
+branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || true)
+case "$branch" in
+  worktree-*)
+    intended=${branch#worktree-}
+    intended=${intended//+//}   # +  ->  /  (inverse of claude's path sanitising)
+    if [ "$intended" != "$branch" ]; then
+      if git show-ref --verify --quiet "refs/heads/$intended"; then
+        echo "worktree-setup: leaving '$branch' (target '$intended' already exists)" >&2
+      elif git branch -m "$branch" "$intended"; then
+        echo "worktree-setup: renamed branch '$branch' -> '$intended'" >&2
+      fi
+    fi
+    ;;
+esac
+
 # Fresh install only when deps are absent, so resume/compact re-runs are instant.
 if [ ! -d node_modules ]; then
   echo "worktree-setup: pnpm install (fresh worktree)..." >&2
