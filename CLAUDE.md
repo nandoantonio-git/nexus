@@ -4,11 +4,6 @@
 
 Nexus is a deep storage solution using AWS S3 tiers (Standard → Glacier) for cost-effective file archival. "Dropbox for archival."
 
-**Stack:** Next.js 16 / Supabase (DB) / AWS S3 / Stripe / Vercel
-**Auth:** BetterAuth | **ORM:** Drizzle | **API:** tRPC v11
-**Monorepo:** pnpm workspaces + Turborepo | **IaC:** Terraform
-**Styling:** Tailwind | **Testing:** Vitest + Playwright
-
 ## Commands
 
 **REQUIRED before committing:** `pnpm check` (runs lint + build + test via Turborepo).
