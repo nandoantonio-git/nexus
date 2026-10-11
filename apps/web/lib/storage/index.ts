@@ -1,4 +1,8 @@
-import { put as presignedPut, get as presignedGet } from './presigned';
+import {
+    put as presignedPut,
+    get as presignedGet,
+    contentDisposition as presignedContentDisposition,
+} from './presigned';
 import {
     isConfigured as artifactsIsConfigured,
     get as artifactsGet,
@@ -6,6 +10,7 @@ import {
 import {
     isConfigured as derivedIsConfigured,
     get as derivedGet,
+    probe as derivedProbe,
 } from './derived';
 import { getObjectState as glacierGetObjectState } from './glacier';
 import { remove as objectsRemove, listAll as objectsListAll } from './objects';
@@ -15,12 +20,14 @@ import {
     signPartsByNumber as multipartSignPartsByNumber,
     listParts as multipartListParts,
     complete as multipartComplete,
+    listOpenKeys as multipartListOpenKeys,
     abort as multipartAbort,
 } from './multipart';
 
 const presigned = {
     put: presignedPut,
     get: presignedGet,
+    contentDisposition: presignedContentDisposition,
 } as const;
 
 const artifacts = {
@@ -31,6 +38,7 @@ const artifacts = {
 const derived = {
     isConfigured: derivedIsConfigured,
     get: derivedGet,
+    probe: derivedProbe,
 } as const;
 
 const glacier = {
@@ -48,6 +56,7 @@ const multipart = {
     signPartsByNumber: multipartSignPartsByNumber,
     listParts: multipartListParts,
     complete: multipartComplete,
+    listOpenKeys: multipartListOpenKeys,
     abort: multipartAbort,
 } as const;
 
