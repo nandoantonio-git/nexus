@@ -13,11 +13,13 @@ Added sections:
 Removed sections: None
 Follow-up TODOs: None
 -->
+
 # Nexus Constitution
 
 ## Core Principles
 
 ### I. Archival-First Product Semantics
+
 Nexus MUST preserve its core product promise: cold archival storage for files that users rarely
 access, with Glacier-backed durability and explicit restore latency. Every storage feature MUST
 make the archive-vs-restore lifecycle visible to the user, and download access MUST only be
@@ -28,6 +30,7 @@ Rationale: Nexus is "Dropbox for archival," not general hot storage. Correct exp
 latency, durability, and restore status are part of the product contract.
 
 ### II. Type-Safe Boundaries
+
 All external input MUST be validated before business logic executes. tRPC procedures MUST use Zod
 schemas for mutation inputs, environment variables MUST be validated through the canonical env
 schema, and database access MUST use the typed Drizzle schema and `@nexus/db` exports. Shared job,
@@ -37,6 +40,7 @@ Rationale: Nexus coordinates browser uploads, S3, SQS, SNS, Stripe, and Postgres
 boundaries prevent silent data shape drift across those systems.
 
 ### III. Explicit Asynchronous State
+
 Long-running work MUST be represented as durable state transitions, not hidden side effects.
 Glacier restores, SQS jobs, webhooks, billing events, and worker tasks MUST record pending,
 in-progress, completed, failed, or equivalent terminal states. Webhooks and retries MUST be
@@ -46,6 +50,7 @@ Rationale: Restore and billing flows depend on third-party retries and delayed c
 idempotent state transitions keep user-visible status accurate and prevent double-processing.
 
 ### IV. Security and Secret Hygiene
+
 Secrets MUST never be committed or emitted in logs. AWS, Stripe, Supabase, auth, and email
 credentials MUST remain in environment configuration or managed secret stores. Logs MAY include
 non-sensitive identifiers and status values, but MUST redact tokens, access keys, database URLs,
@@ -56,6 +61,7 @@ Rationale: Nexus handles user archives, payment flows, and cloud infrastructure 
 Secret leakage or unauthenticated webhook mutation is a release-blocking security failure.
 
 ### V. Simple, Readable TypeScript
+
 Implementation MUST favor direct functions, small modules, and straightforward control flow.
 New abstractions MUST earn their place by removing duplication or making boundaries clearer. Clean
 Architecture, DDD layers, repository patterns, logging frameworks, and other structural overhead

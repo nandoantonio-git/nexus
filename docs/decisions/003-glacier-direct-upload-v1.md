@@ -11,6 +11,7 @@ tags:
 aliases:
     - Storage Tier Decision
 ---
+
 # ADR-003: Glacier Direct Upload for V1
 
 ## Status
@@ -56,6 +57,7 @@ lifecycle-based tier transition.
 ## Consequences
 
 **Positive:**
+
 - Matches the "Keep It Simple" principle already documented in
   `docs/architecture/principles.md`: avoid building for problems that don't
   exist yet.
@@ -69,6 +71,7 @@ lifecycle-based tier transition.
   unannounced cooldown.
 
 **Negative:**
+
 - No "fast access grace period" after upload — if a user needs to
   immediately re-access a just-uploaded file, they pay the same retrieval
   cost/delay as any long-stored file.
